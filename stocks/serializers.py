@@ -22,15 +22,20 @@ class StockInSerializer(serializers.ModelSerializer):
 
 
 class ItemInSerializer(serializers.ModelSerializer):
+    product_name = serializers.SerializerMethodField()
+    product_stock = serializers.SerializerMethodField()
+
+    def get_product_name(self, obj):
+        if obj.product:
+            return obj.product.name
+
+    def get_product_stock(self, obj):
+        if obj.product:
+            return obj.product.stock
+
     class Meta:
         model = ItemIn
         fields = '__all__'
-        validators = [
-            UniqueTogetherValidator(
-                queryset=ItemIn.objects.all(),
-                fields=['product', 'stockin'],
-            )
-        ]
 
 
 class StockOutSerializer(serializers.ModelSerializer):

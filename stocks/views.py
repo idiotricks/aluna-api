@@ -1,5 +1,7 @@
 from rest_framework import viewsets
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.response import Response
 
 from stocks.models import StockCard, StockIn, ItemIn, StockOut, ItemOut
 from stocks.serializers import StockCardSerializer, StockInSerializer, ItemInSerializer, StockOutSerializer, \
@@ -33,7 +35,7 @@ class StockCardViewSet(viewsets.ModelViewSet):
 
 class StockInViewSet(viewsets.ModelViewSet):
     serializer_class = StockInSerializer
-    queryset = StockIn.objects.all()
+    queryset = StockIn.objects.all().order_by('-created')
 
     search_fields = [
         'supplier__name',
@@ -45,11 +47,34 @@ class StockInViewSet(viewsets.ModelViewSet):
         'numcode',
         'supplier',
         'user',
-        'is_publish',
+        'is_init',
     ]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @action(methods=['POST'], detail=True)
+    def calculate(self, request, pk=None):
+        stock_in = self.get_object()
+        if not stock_in.supplier:
+            raise ValidationError({'detail': f'Supplier is not added'})
+        item_ins = ItemIn.objects.filter(stockin=stock_in, is_init=False)
+        if item_ins.exists():
+            for item_in in item_ins:
+                # if (item_in.product.stock - item_in.quantity) <= 0:
+                #     raise ValidationError('Quantity not available in stock')
+                #
+                if item_in.quantity < 1:
+                    raise ValidationError({'detail': f'Item {item_in.product.name} may not be zero.'})
+                product = item_in.product
+                product.stock = product.stock + item_in.quantity
+                product.save()
+
+            stock_in.is_calculate = True
+            stock_in.save()
+        else:
+            raise ValidationError({'detail': 'Item cannot be empty.'})
+        return Response(self.serializer_class(stock_in).data)
 
 
 class ItemInViewSet(viewsets.ModelViewSet):
@@ -57,8 +82,14 @@ class ItemInViewSet(viewsets.ModelViewSet):
     queryset = ItemIn.objects.all()
 
     search_fields = [
+        'stockin__numcode',
+        'product__name',
+    ]
+
+    filterset_fields = [
         'stockin',
         'product',
+        'is_init',
     ]
 
 

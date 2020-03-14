@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.utils.timezone import now
 
 from helpers.models import auto_number
 from products.models import Product
@@ -16,6 +17,7 @@ class StockCard(Timestamp):
     total_in = models.PositiveIntegerField(default=0)
     end_balance = models.PositiveIntegerField(default=0)
     total_out = models.PositiveIntegerField(default=0)
+    is_init = models.BooleanField(default=True)
 
     def __str__(self):
         return self.numcode
@@ -29,10 +31,18 @@ class StockCard(Timestamp):
 class StockIn(Timestamp):
     STOCK_IN_PREFIX = 'STI'
     numcode = models.CharField(max_length=20, unique=True)
-    date = models.DateField()
-    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name='supplierstockin')
+    date = models.DateField(blank=True, null=True, default=now().date())
+    supplier = models.ForeignKey(
+        Supplier,
+        on_delete=models.CASCADE,
+        related_name='supplierstockin',
+        blank=True,
+        null=True
+    )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='userstockin')
     is_publish = models.BooleanField(default=False)
+    is_init = models.BooleanField(default=True)
+    is_calculate = models.BooleanField(default=False)
 
     def __str__(self):
         return self.numcode
@@ -44,9 +54,10 @@ class StockIn(Timestamp):
 
 
 class ItemIn(Timestamp):
-    stockin = models.ForeignKey(StockIn, on_delete=models.CASCADE, related_name='stockinitemin')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='productitemin')
+    stockin = models.ForeignKey(StockIn, on_delete=models.CASCADE, related_name='stockinitemin', blank=True, null=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='productitemin', blank=True, null=True)
     quantity = models.PositiveIntegerField(default=0)
+    is_init = models.BooleanField(default=True)
 
     def __str__(self):
         return self.stockin.numcode

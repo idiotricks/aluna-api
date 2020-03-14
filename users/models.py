@@ -10,7 +10,7 @@ class Customer(Timestamp):
     name = models.CharField(max_length=100, default='Ex: Sintia')
     phone = models.CharField(max_length=20, default='Ex: +62xxxxxxxxxx')
     address = models.TextField(default='Ex: Jl. Kartika')
-    is_publish = models.BooleanField(default=False)
+    is_init = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
         if not self.numcode:
@@ -28,6 +28,7 @@ class Supplier(Timestamp):
     phone = models.CharField(max_length=20, default='Ex: +62xxxxxxxxxx')
     address = models.TextField(default='Ex: Jl. Kartika')
     is_publish = models.BooleanField(default=False)
+    is_init = models.BooleanField(default=True)
 
     def __str__(self):
         return self.numcode

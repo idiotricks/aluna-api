@@ -19,7 +19,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     filterset_fields = [
         'numcode',
         'user',
-        'is_publish',
+        'is_init',
     ]
 
     def perform_create(self, serializer):
