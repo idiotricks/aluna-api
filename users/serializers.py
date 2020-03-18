@@ -18,6 +18,11 @@ class UserSerializer(serializers.ModelSerializer):
         ]
 
 
+class SigninSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=100, required=True)
+    password = serializers.CharField(max_length=100, required=True)
+
+
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer

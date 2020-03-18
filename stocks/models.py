@@ -69,7 +69,7 @@ class StockOut(Timestamp):
     date = models.DateField()
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='supplierstockout')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='userstockout')
-    is_publish = models.BooleanField(default=False)
+    is_init = models.BooleanField(default=False)
 
     def __str__(self):
         return self.numcode
@@ -84,6 +84,7 @@ class ItemOut(Timestamp):
     stockout = models.ForeignKey(StockOut, on_delete=models.CASCADE, related_name='stockoutitemout')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='productitemout')
     quantity = models.PositiveIntegerField(default=0)
+    is_init = models.BooleanField(default=False)
 
     def __str__(self):
         return self.stockout.numcode

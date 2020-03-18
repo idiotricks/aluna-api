@@ -1,11 +1,15 @@
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
 from rest_framework import viewsets
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from users.filters import CustomerFilter
 from users.models import Customer, Supplier
-from users.serializers import UserSerializer, CustomerSerializer, SupplierSerializer
+from users.serializers import UserSerializer, CustomerSerializer, SupplierSerializer, SigninSerializer
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -36,6 +40,34 @@ class UserViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, pk=None):
         raise PermissionDenied('Resource not found')
 
+    @action(methods=['POST'], detail=False, permission_classes=[AllowAny])
+    def signin(self, request, pk=None):
+        serializer = SigninSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                user = User.objects.get(username=serializer.data.get('username'))
+                pwd_valid = check_password(serializer.data.get('password'), user.password)
+
+                if not user.is_active:
+                    raise ValidationError({'detail': 'User not activated'})
+
+                if not pwd_valid:
+                    raise ValidationError({'detail': 'Password not match'})
+
+                token = Token.objects.get(user=user)
+                data = {
+                    'username': user.username,
+                    'email': user.email,
+                    'token': f'Token {token.key}'
+                }
+
+                return Response(data)
+
+            except User.DoesNotExist:
+                raise ValidationError({'detail': 'Username not found'})
+            except Token.DoesNotExist:
+                raise ValidationError({'detail': 'Token not initialize for this user'})
+
 
 class CustomerViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerSerializer
@@ -48,26 +80,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
         'address',
     ]
 
-    filterset_fields = [
-        'numcode',
-        'is_init',
-    ]
-
-    @action(methods=['POST'], detail=True)
-    def publish(self, request, pk=None):
-        customer = self.get_object()
-        customer.is_publish = True
-        customer.save()
-
-        return Response(self.serializer_class(customer).data)
-
-    @action(methods=['POST'], detail=True)
-    def draft(self, request, pk=None):
-        customer = self.get_object()
-        customer.is_publish = False
-        customer.save()
-
-        return Response(self.serializer_class(customer).data)
+    filterset_class = CustomerFilter
 
 
 class SupplierViewSet(viewsets.ModelViewSet):
