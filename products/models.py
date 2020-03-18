@@ -13,7 +13,6 @@ class Product(Timestamp):
     cogs = models.PositiveIntegerField(default=0)
     price = models.PositiveIntegerField(default=0)
     stock = models.PositiveIntegerField(default=0)
-    is_publish = models.BooleanField(default=False)
     is_init = models.BooleanField(default=True)
 
     def __str__(self):

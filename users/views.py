@@ -7,7 +7,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from users.filters import CustomerFilter
+from users.filters import CustomerFilter, SupplierFilter
 from users.models import Customer, Supplier
 from users.serializers import UserSerializer, CustomerSerializer, SupplierSerializer, SigninSerializer
 
@@ -69,6 +69,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 raise ValidationError({'detail': 'Token not initialize for this user'})
 
 
+# @method_decorator(cache_page(60 * 5), name='dispatch')
 class CustomerViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerSerializer
     queryset = Customer.objects.all().order_by('-created')
@@ -83,33 +84,16 @@ class CustomerViewSet(viewsets.ModelViewSet):
     filterset_class = CustomerFilter
 
 
+# @method_decorator(cache_page(60 * 5), name='dispatch')
 class SupplierViewSet(viewsets.ModelViewSet):
     serializer_class = SupplierSerializer
     queryset = Supplier.objects.all().order_by('-created')
 
     search_fields = [
+        'numcode',
         'name',
         'phone',
         'address',
     ]
 
-    filterset_fields = [
-        'numcode',
-        'is_init',
-    ]
-
-    @action(methods=['POST'], detail=True)
-    def publish(self, request, pk=None):
-        supplier = self.get_object()
-        supplier.is_publish = True
-        supplier.save()
-
-        return Response(self.serializer_class(supplier).data)
-
-    @action(methods=['POST'], detail=True)
-    def draft(self, request, pk=None):
-        supplier = self.get_object()
-        supplier.is_publish = False
-        supplier.save()
-
-        return Response(self.serializer_class(supplier).data)
+    filterset_class = SupplierFilter
