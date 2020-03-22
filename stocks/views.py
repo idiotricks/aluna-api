@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 
+from stocks.filters import StockInFilter
 from stocks.models import StockCard, StockIn, ItemIn, StockOut, ItemOut
 from stocks.serializers import StockCardSerializer, StockInSerializer, ItemInSerializer, StockOutSerializer, \
     ItemOutSerializer
@@ -38,17 +39,13 @@ class StockInViewSet(viewsets.ModelViewSet):
     queryset = StockIn.objects.all().order_by('-created')
 
     search_fields = [
+        'numcode',
         'supplier__name',
         'user__username',
         'user__email',
     ]
 
-    filterset_fields = [
-        'numcode',
-        'supplier',
-        'user',
-        'is_init',
-    ]
+    filterset_class = StockInFilter
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

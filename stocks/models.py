@@ -40,7 +40,6 @@ class StockIn(Timestamp):
         null=True
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='userstockin')
-    is_publish = models.BooleanField(default=False)
     is_init = models.BooleanField(default=True)
     is_calculate = models.BooleanField(default=False)
 
