@@ -1,5 +1,6 @@
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
+from django.http import HttpResponse
 from rest_framework import viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
@@ -10,6 +11,7 @@ from rest_framework.response import Response
 from users.filters import CustomerFilter, SupplierFilter
 from users.models import Customer, Supplier
 from users.serializers import UserSerializer, CustomerSerializer, SupplierSerializer, SigninSerializer
+from utils.pdf import TOCSV, TOPDF
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -31,14 +33,9 @@ class UserViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         raise PermissionDenied('Resource not found')
 
-    def update(self, request, *args, **kwargs):
-        raise PermissionDenied('Resource not found')
-
     def destroy(self, request, *args, **kwargs):
         raise PermissionDenied('Resource not found')
 
-    def partial_update(self, request, pk=None):
-        raise PermissionDenied('Resource not found')
 
     @action(methods=['POST'], detail=False, permission_classes=[AllowAny])
     def signin(self, request, pk=None):
@@ -57,6 +54,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 token = Token.objects.get(user=user)
                 data = {
                     'username': user.username,
+                    'user_id': user.pk,
                     'email': user.email,
                     'token': f'Token {token.key}'
                 }
@@ -83,6 +81,65 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
     filterset_class = CustomerFilter
 
+    @action(methods=['POST', 'GET'], detail=False)
+    def export_csv(self, request, pk=None):
+        response = HttpResponse(content_type='application/csv')
+        response['Content-Disposition'] = 'attachment; filename=somefilename.csv'
+        queryset = self.filter_queryset(self.get_queryset().filter(is_init=False))
+
+        header = [
+            'Nomer Pelanggan',
+            'Nama Pelanggan',
+            'Kontak Pelanggan',
+            'Alamat Pelanggan'
+        ]
+
+        csv = TOCSV(header, [[
+            obj.numcode,
+            obj.name,
+            obj.phone,
+            obj.address
+        ] for obj in queryset], response)
+
+        return csv.build()
+
+    @action(methods=['POST', 'GET'], detail=False)
+    def export_pdf(self, request, pk=None):
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename=somefilename.pdf'
+        queryset = self.filter_queryset(self.get_queryset().filter(is_init=False))
+
+        pdf = TOPDF(response, 'Laporan Pelanggan', None)
+        pdf.set_table_detail([
+            pdf.set_subject('Laporan Pelanggan'),
+            pdf.set_periode(request),
+            pdf.set_user(request),
+            pdf.set_date_created()
+        ])
+        pdf.set_break()
+
+        temp = []
+        number = 1
+        header = [
+            '#',
+            'Nomer Pelanggan',
+            'Nama Pelanggan',
+            'Kontak Pelanggan',
+            'Alamat Pelanggan',
+        ]
+
+        for obj in queryset:
+            temp.append([
+                number,
+                obj.numcode,
+                obj.name,
+                obj.phone,
+                obj.address
+            ])
+            number += 1
+        pdf.set_table(header, temp, 'LEFT', None)
+        return pdf.build()
+
 
 # @method_decorator(cache_page(60 * 5), name='dispatch')
 class SupplierViewSet(viewsets.ModelViewSet):
@@ -97,3 +154,62 @@ class SupplierViewSet(viewsets.ModelViewSet):
     ]
 
     filterset_class = SupplierFilter
+
+    @action(methods=['POST', 'GET'], detail=False)
+    def export_csv(self, request, pk=None):
+        response = HttpResponse(content_type='application/csv')
+        response['Content-Disposition'] = 'attachment; filename=somefilename.csv'
+        queryset = self.filter_queryset(self.get_queryset().filter(is_init=False))
+
+        header = [
+            'Nomer Supplier',
+            'Nama Supplier',
+            'Kontak Supplier',
+            'Alamat Supplier'
+        ]
+
+        csv = TOCSV(header, [[
+            obj.numcode,
+            obj.name,
+            obj.phone,
+            obj.address
+        ] for obj in queryset], response)
+
+        return csv.build()
+
+    @action(methods=['POST', 'GET'], detail=False)
+    def export_pdf(self, request, pk=None):
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename=somefilename.pdf'
+        queryset = self.filter_queryset(self.get_queryset().filter(is_init=False))
+
+        pdf = TOPDF(response, 'Laporan Supplier', None)
+        pdf.set_table_detail([
+            pdf.set_subject('Laporan Supplier'),
+            pdf.set_periode(request),
+            pdf.set_user(request),
+            pdf.set_date_created()
+        ])
+        pdf.set_break()
+
+        temp = []
+        number = 1
+        header = [
+            '#',
+            'Nomer Supplier',
+            'Nama Supplier',
+            'Kontak Supplier',
+            'Alamat Supplier',
+        ]
+
+        for obj in queryset:
+            temp.append([
+                number,
+                obj.numcode,
+                obj.name,
+                obj.phone,
+                obj.address
+            ])
+            number += 1
+        pdf.set_table(header, temp, 'LEFT', None)
+        return pdf.build()

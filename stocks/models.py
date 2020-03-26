@@ -10,9 +10,12 @@ from utils.models import Timestamp
 
 class StockCard(Timestamp):
     STOCK_CARD_PREFIX = 'STC'
-    numcode = models.CharField(max_length=20, unique=True)
+    numcode = models.CharField(max_length=20)
     date = models.DateField()
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='productstockcard')
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='productstockcard')
     init_balance = models.PositiveIntegerField(default=0)
     total_in = models.PositiveIntegerField(default=0)
     end_balance = models.PositiveIntegerField(default=0)
@@ -65,10 +68,17 @@ class ItemIn(Timestamp):
 class StockOut(Timestamp):
     STOCK_OUT_PREFIX = 'STO'
     numcode = models.CharField(max_length=20, unique=True)
-    date = models.DateField()
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='supplierstockout')
+    date = models.DateField(blank=True, null=True, default=now().date())
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.CASCADE,
+        related_name='supplierstockout',
+        blank=True,
+        null=True
+    )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='userstockout')
     is_init = models.BooleanField(default=False)
+    is_calculate = models.BooleanField(default=False)
 
     def __str__(self):
         return self.numcode
