@@ -37,7 +37,7 @@ class StockIn(Timestamp):
     date = models.DateField(blank=True, null=True, default=now().date())
     supplier = models.ForeignKey(
         Supplier,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='supplierstockin',
         blank=True,
         null=True
@@ -56,8 +56,19 @@ class StockIn(Timestamp):
 
 
 class ItemIn(Timestamp):
-    stockin = models.ForeignKey(StockIn, on_delete=models.CASCADE, related_name='stockinitemin', blank=True, null=True)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='productitemin', blank=True, null=True)
+    stockin = models.ForeignKey(
+        StockIn,
+        on_delete=models.PROTECT,
+        related_name='stockinitemin',
+        blank=True,
+        null=True
+    )
+    product = models.ForeignKey(
+        Product, on_delete=models.PROTECT,
+        related_name='productitemin',
+        blank=True,
+        null=True
+    )
     quantity = models.PositiveIntegerField(default=0)
     is_init = models.BooleanField(default=True)
 

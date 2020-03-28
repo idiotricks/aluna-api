@@ -121,7 +121,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'id'
 
 TIME_ZONE = 'Asia/Jakarta'
 
@@ -150,12 +150,10 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
     'DATE_INPUT_FORMATS': ['iso-8601', '%Y-%m-%d'],
     'DATE_FORMAT': '%Y-%m-%d',
-    'DATETIME_FORMAT': '%A, %d %B %Y %H:%I:%S %p',
+    'DATETIME_FORMAT': '%d %B %Y %H:%M',
+    'EXCEPTION_HANDLER': 'hipo_drf_exceptions.handler',
 }
 
 

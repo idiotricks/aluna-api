@@ -4,8 +4,8 @@ from users.models import Customer, Supplier
 
 
 class CustomerFilter(filters.FilterSet):
-    start_date = DateFilter(field_name='created_date', lookup_expr=('lt'), )
-    end_date = DateFilter(field_name='created_date', lookup_expr=('gt'))
+    start_date = DateFilter(field_name='created_date', lookup_expr=('gte'), )
+    end_date = DateFilter(field_name='created_date', lookup_expr=('lte'))
 
     class Meta:
         model = Customer

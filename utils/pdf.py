@@ -4,7 +4,7 @@ from datetime import datetime
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import inch
+from reportlab.lib.units import inch, mm
 from reportlab.platypus import SimpleDocTemplate, Table, Paragraph, Spacer, PageBreak
 
 
@@ -46,14 +46,7 @@ class TOPDF:
 
         return [
             ('FONTSIZE', (0, 0), (-1, -1), 8),
-            # ('BACKGROUND', (0, 0), (-1, -1), colors.whitesmoke),
-            # ('BACKGROUND', (1, 0), (1, -1), colors.beige),
-            # ('TEXTCOLOR', (0, 0), (0, -1), colors.whitesmoke),
-            # ('BOX', (0, 0), (-1, -1), 0.25),
-            # ('GRID', (0, -1), (-1, -1), 0.01, colors.gray),
-            # ('LINEBELOW', (0, -1), (-1, -1), 0.25, colors.black),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            # ('BOTTOMPADDING', (0, -1), (-1, -1), 20),
         ]
 
     def set_pdf(self):
@@ -145,6 +138,21 @@ class TOPDF:
         return [key, ':', value]
 
     def build(self):
-
         self.pdf.build(self.elems)
         return self.response
+
+
+class TOPDFBarcodeThermal(TOPDF):
+    width = 110 * mm
+    limit = 110 * mm
+
+    def set_pdf(self):
+        self.pdf = SimpleDocTemplate(
+            self.response,
+            title=self.title,
+            rightMargin=0,
+            leftMargin=0,
+            topMargin=0,
+            bottomMargin=0,
+            pagesize=(self.width, self.limit)
+        )

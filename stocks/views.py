@@ -3,10 +3,12 @@ from django.http import HttpResponse
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from stocks.filters import StockInFilter, StockOutFilter, StockCardFilter
 from stocks.models import StockCard, StockIn, ItemIn, StockOut, ItemOut
+from stocks.permissions import IsAccessDeleteStockIn
 from stocks.serializers import StockCardSerializer, StockInSerializer, ItemInSerializer, StockOutSerializer, \
     ItemOutSerializer
 from utils.pdf import TOPDF, TOCSV
@@ -14,6 +16,9 @@ from utils.pdf import TOPDF, TOCSV
 
 class StockCardViewSet(viewsets.ModelViewSet):
     serializer_class = StockCardSerializer
+    permission_classes = [
+        IsAuthenticated,
+    ]
     queryset = StockCard.objects.all()
 
     search_fields = [
@@ -132,6 +137,10 @@ class StockCardViewSet(viewsets.ModelViewSet):
 
 class StockInViewSet(viewsets.ModelViewSet):
     serializer_class = StockInSerializer
+    permission_classes = (
+        IsAuthenticated,
+        IsAccessDeleteStockIn,
+    )
     queryset = StockIn.objects.all().order_by('-created')
 
     search_fields = [
@@ -326,6 +335,9 @@ class StockInViewSet(viewsets.ModelViewSet):
 
 class ItemInViewSet(viewsets.ModelViewSet):
     serializer_class = ItemInSerializer
+    permission_classes = (
+        IsAuthenticated,
+    )
     queryset = ItemIn.objects.all()
 
     search_fields = [
@@ -545,6 +557,9 @@ class StockOutViewSet(viewsets.ModelViewSet):
 
 class ItemOutViewSet(viewsets.ModelViewSet):
     serializer_class = ItemOutSerializer
+    permission_classes = (
+        IsAuthenticated,
+    )
     queryset = ItemOut.objects.all()
 
     search_fields = [

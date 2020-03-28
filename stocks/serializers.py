@@ -49,7 +49,7 @@ class StockInSerializer(serializers.ModelSerializer):
 class ItemInSerializer(serializers.ModelSerializer):
     product_name = serializers.SerializerMethodField()
     product_stock = serializers.SerializerMethodField()
-    residual_stock = serializers.SerializerMethodField()
+    end_stock = serializers.SerializerMethodField()
     buffer_stock = serializers.SerializerMethodField()
 
     def get_product_name(self, obj):
@@ -60,13 +60,10 @@ class ItemInSerializer(serializers.ModelSerializer):
         if obj.product:
             return obj.product.stock
 
-    def get_residual_stock(self, obj):
+    def get_end_stock(self, obj):
         if obj.product:
             if obj.quantity:
-                data = obj.product.stock - obj.quantity
-                if data > 0:
-                    return data
-                return 0
+                return obj.product.stock + obj.quantity
         return 0
 
     def get_buffer_stock(self, obj):

@@ -1,15 +1,21 @@
 from django.http import HttpResponse
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 
 from products.filters import ProductFilter
 from products.models import Product
+from products.permissions import IsAccessDeleteProduct
 from products.serializers import ProductSerializer
 from utils.pdf import TOCSV, TOPDF
 
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
+    permission_classes = [
+        IsAuthenticated,
+        IsAccessDeleteProduct,
+    ]
     serializer_class = ProductSerializer
 
     search_fields = [

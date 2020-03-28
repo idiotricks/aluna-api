@@ -4,18 +4,23 @@ from django.http import HttpResponse
 from rest_framework import viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.permissions import AllowAny
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from users.filters import CustomerFilter, SupplierFilter
 from users.models import Customer, Supplier
+from users.permissions import IsAccessDeleteCustomer, IsAccessDeleteSupplier
 from users.serializers import UserSerializer, CustomerSerializer, SupplierSerializer, SigninSerializer
+from utils.helpers import short_text
 from utils.pdf import TOCSV, TOPDF
 
 
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
+    permission_classes = [
+        IsAuthenticated,
+    ]
     queryset = User.objects.all()
     search_fields = [
         'email',
@@ -29,13 +34,6 @@ class UserViewSet(viewsets.ModelViewSet):
         'is_active',
         'is_staff',
     ]
-
-    def create(self, request, *args, **kwargs):
-        raise PermissionDenied('Resource not found')
-
-    def destroy(self, request, *args, **kwargs):
-        raise PermissionDenied('Resource not found')
-
 
     @action(methods=['POST'], detail=False, permission_classes=[AllowAny])
     def signin(self, request, pk=None):
@@ -67,9 +65,12 @@ class UserViewSet(viewsets.ModelViewSet):
                 raise ValidationError({'detail': 'Token not initialize for this user'})
 
 
-# @method_decorator(cache_page(60 * 5), name='dispatch')
 class CustomerViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerSerializer
+    permission_classes = [
+        IsAuthenticated,
+        IsAccessDeleteCustomer,
+    ]
     queryset = Customer.objects.all().order_by('-created')
 
     search_fields = [
@@ -134,16 +135,19 @@ class CustomerViewSet(viewsets.ModelViewSet):
                 obj.numcode,
                 obj.name,
                 obj.phone,
-                obj.address
+                short_text(obj.address)
             ])
             number += 1
         pdf.set_table(header, temp, 'LEFT', None)
         return pdf.build()
 
 
-# @method_decorator(cache_page(60 * 5), name='dispatch')
 class SupplierViewSet(viewsets.ModelViewSet):
     serializer_class = SupplierSerializer
+    permission_classes = [
+        IsAuthenticated,
+        IsAccessDeleteSupplier,
+    ]
     queryset = Supplier.objects.all().order_by('-created')
 
     search_fields = [
@@ -208,7 +212,7 @@ class SupplierViewSet(viewsets.ModelViewSet):
                 obj.numcode,
                 obj.name,
                 obj.phone,
-                obj.address
+                short_text(obj.address)
             ])
             number += 1
         pdf.set_table(header, temp, 'LEFT', None)
