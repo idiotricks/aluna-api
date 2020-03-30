@@ -37,7 +37,7 @@ class StockIn(Timestamp):
     date = models.DateField(blank=True, null=True, default=now().date())
     supplier = models.ForeignKey(
         Supplier,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name='supplierstockin',
         blank=True,
         null=True
@@ -58,18 +58,20 @@ class StockIn(Timestamp):
 class ItemIn(Timestamp):
     stockin = models.ForeignKey(
         StockIn,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name='stockinitemin',
         blank=True,
         null=True
     )
     product = models.ForeignKey(
-        Product, on_delete=models.PROTECT,
+        Product, on_delete=models.CASCADE,
         related_name='productitemin',
         blank=True,
         null=True
     )
+    stock = models.PositiveIntegerField(default=0)
     quantity = models.PositiveIntegerField(default=0)
+    end_stock = models.PositiveIntegerField(default=0)
     is_init = models.BooleanField(default=True)
 
     def __str__(self):
@@ -88,7 +90,7 @@ class StockOut(Timestamp):
         null=True
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='userstockout')
-    is_init = models.BooleanField(default=False)
+    is_init = models.BooleanField(default=True)
     is_calculate = models.BooleanField(default=False)
 
     def __str__(self):
@@ -103,8 +105,10 @@ class StockOut(Timestamp):
 class ItemOut(Timestamp):
     stockout = models.ForeignKey(StockOut, on_delete=models.CASCADE, related_name='stockoutitemout')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='productitemout')
+    stock = models.PositiveIntegerField(default=0)
     quantity = models.PositiveIntegerField(default=0)
     is_init = models.BooleanField(default=False)
+    end_stock = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.stockout.numcode

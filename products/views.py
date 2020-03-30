@@ -11,7 +11,7 @@ from utils.pdf import TOCSV, TOPDF
 
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
+    queryset = Product.objects.all().order_by('-created')
     permission_classes = [
         IsAuthenticated,
         IsAccessDeleteProduct,

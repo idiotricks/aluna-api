@@ -48,32 +48,35 @@ class StockInSerializer(serializers.ModelSerializer):
 
 class ItemInSerializer(serializers.ModelSerializer):
     product_name = serializers.SerializerMethodField()
-    product_stock = serializers.SerializerMethodField()
-    end_stock = serializers.SerializerMethodField()
-    buffer_stock = serializers.SerializerMethodField()
 
     def get_product_name(self, obj):
         if obj.product:
             return f'{obj.product.name} / {obj.product.numcode}'
+        return ''
 
-    def get_product_stock(self, obj):
-        if obj.product:
-            return obj.product.stock
+    def create(self, validated_data):
+        itemins = ItemIn.objects.filter(
+            is_init=False,
+            stockin=validated_data.get('stockin'),
+            product=validated_data.get('product')
+        )
 
-    def get_end_stock(self, obj):
-        if obj.product:
-            if obj.quantity:
-                return obj.product.stock + obj.quantity
-        return 0
+        if itemins.exists():
+            instance = itemins.first()
+            instance.quantity = instance.quantity + validated_data.get('quantity')
+        else:
+            instance = ItemIn.objects.create(**validated_data)
 
-    def get_buffer_stock(self, obj):
-        if obj.product:
-            if obj.quantity:
-                data = obj.product.stock - obj.quantity
-                if data < 0:
-                    return abs(data)
-                return 0
-        return 0
+        instance.end_stock = instance.stock + instance.quantity
+        instance.save()
+
+        return instance
+
+    def update(self, instance, validated_data):
+        instance = super(ItemInSerializer, self).update(instance, validated_data)
+        instance.end_stock = instance.stock + instance.quantity
+        instance.save()
+        return instance
 
     class Meta:
         model = ItemIn
@@ -115,8 +118,7 @@ class StockOutSerializer(serializers.ModelSerializer):
 class ItemOutSerializer(serializers.ModelSerializer):
     product_name = serializers.SerializerMethodField()
     product_stock = serializers.SerializerMethodField()
-    residual_stock = serializers.SerializerMethodField()
-    buffer_stock = serializers.SerializerMethodField()
+    is_problem = serializers.SerializerMethodField()
 
     def get_product_name(self, obj):
         if obj.product:
@@ -126,23 +128,37 @@ class ItemOutSerializer(serializers.ModelSerializer):
         if obj.product:
             return obj.product.stock
 
-    def get_residual_stock(self, obj):
-        if obj.product:
-            if obj.quantity:
-                data = obj.product.stock - obj.quantity
-                if data > 0:
-                    return data
-                return 0
-        return 0
+    def get_is_problem(self, obj):
+        if obj.quantity:
+            data = obj.stock - obj.quantity
+            if data < 0:
+                return True
+            return False
+        return False
 
-    def get_buffer_stock(self, obj):
-        if obj.product:
-            if obj.quantity:
-                data = obj.product.stock - obj.quantity
-                if data < 0:
-                    return abs(data)
-                return 0
-        return 0
+    def create(self, validated_data):
+        itemouts = ItemOut.objects.filter(
+            is_init=False,
+            stockout=validated_data.get('stockout'),
+            product=validated_data.get('product')
+        )
+
+        if itemouts.exists():
+            instance = itemouts.first()
+            instance.quantity = instance.quantity + validated_data.get('quantity')
+        else:
+            instance = ItemOut.objects.create(**validated_data)
+
+        instance.end_stock = instance.stock - instance.quantity
+        instance.save()
+
+        return instance
+
+    def update(self, instance, validated_data):
+        instance = super(ItemOutSerializer, self).update(instance, validated_data)
+        instance.end_stock = instance.stock - instance.quantity
+        instance.save()
+        return instance
 
     class Meta:
         model = ItemOut

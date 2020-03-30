@@ -6,6 +6,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from products.models import Product
 from stocks.filters import StockInFilter, StockOutFilter, StockCardFilter
 from stocks.models import StockCard, StockIn, ItemIn, StockOut, ItemOut
 from stocks.permissions import IsAccessDeleteStockIn
@@ -87,16 +88,13 @@ class StockCardViewSet(viewsets.ModelViewSet):
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename=somefilename.pdf'
         queryset = self.filter_queryset(self.get_queryset().filter(is_init=False))
-        queryset = queryset.values(
-            'product__name',
-            'product__numcode',
-            'date',
+        products = queryset.values(
+            'product',
         ).annotate(
-            Sum('init_balance'),
             Sum('total_in'),
             Sum('total_out'),
             Sum('end_balance')
-        ).order_by('-date')
+        )
 
         pdf = TOPDF(response, 'Laporan Kartu Stok Barang', None)
         pdf.set_table_detail([
@@ -105,33 +103,44 @@ class StockCardViewSet(viewsets.ModelViewSet):
             pdf.set_user(request),
             pdf.set_date_created()
         ])
-        pdf.set_break()
+        pdf.set_page_break()
 
         temp = []
         number = 1
         header = [
             '#',
-            'Nomer Produk',
-            'Nama Produk',
             'Tanggal',
             'Saldo Awal',
             'Stok Masuk',
             'Stok Keluar',
             'Stok Akhir'
         ]
-        for obj in queryset:
-            temp.append([
-                number,
-                obj.get('product__numcode'),
-                obj.get('product__name'),
-                obj.get('date'),
-                obj.get('init_balance__sum'),
-                obj.get('total_in__sum'),
-                obj.get('total_out__sum'),
-                obj.get('end_balance__sum'),
+        for obj in products:
+            product = Product.objects.get(pk=obj.get('product'))
+            stock_cards = queryset.filter(product=product)
+            pdf.set_table_detail([
+                pdf.set_other('Kode Produk', product.numcode),
+                pdf.set_other('Nama Produk', product.name),
+                pdf.set_other('Total Masuk', obj.get('total_in__sum')),
+                pdf.set_other('Total Keluar', obj.get('total_out__sum')),
+                pdf.set_other('Total Saat Ini', product.stock),
             ])
-            number += 1
-        pdf.set_table(header, temp, 'LEFT', None)
+            pdf.set_break()
+            for sc in stock_cards:
+                temp.append([
+                    number,
+                    sc.date,
+                    sc.init_balance,
+                    sc.total_in,
+                    sc.total_out,
+                    sc.end_balance
+                ])
+                number += 1
+            pdf.set_table(header, temp, 'LEFT', None)
+            temp = []
+            number = 1
+            pdf.set_page_break()
+
         return pdf.build()
 
 
@@ -174,7 +183,7 @@ class StockInViewSet(viewsets.ModelViewSet):
                     product=item_in.product,
                     init_balance=item_in.product.stock,
                     total_in=item_in.quantity,
-                    end_balance=item_in.quantity + item_in.product.stock,
+                    end_balance=item_in.product.stock + item_in.quantity,
                     is_init=False
                 ))
                 product = item_in.product
@@ -354,7 +363,7 @@ class ItemInViewSet(viewsets.ModelViewSet):
 
 class StockOutViewSet(viewsets.ModelViewSet):
     serializer_class = StockOutSerializer
-    queryset = StockOut.objects.all()
+    queryset = StockOut.objects.all().order_by('-created')
 
     search_fields = [
         'numcode',
@@ -402,10 +411,10 @@ class StockOutViewSet(viewsets.ModelViewSet):
                 product = item_out.product
                 product.stock = product.stock - item_out.quantity
                 product.save()
-                StockCard.objects.bulk_create(stock_cards)
 
             stock_out.is_calculate = True
             stock_out.save()
+            StockCard.objects.bulk_create(stock_cards)
         else:
             raise ValidationError({'detail': 'Item cannot be empty.'})
 

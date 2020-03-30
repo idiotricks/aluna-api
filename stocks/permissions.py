@@ -7,6 +7,12 @@ class IsAccessDeleteStockIn(permissions.BasePermission):
             return True
 
         if request.method == 'DELETE':
+            if obj.is_init == True:
+                return True
+
+            if obj.is_calculate == False:
+                return True
+
             itemins = obj.stockinitemin.filter(is_init=False).exists()
 
             if itemins:
@@ -21,6 +27,12 @@ class IsAccessDeleteStockOut(permissions.BasePermission):
             return True
 
         if request.method == 'DELETE':
+            if obj.is_init == True:
+                return True
+
+            if obj.is_calculate == False:
+                return True
+
             itemouts = obj.stockoutitemout.filter(is_init=False).exists()
 
             if itemouts:
